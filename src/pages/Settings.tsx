@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Habit } from '../db';
 import { notifEnabled, setNotifEnabled, notifHour, setNotifHour, requestNotifPermission, registerPeriodicSync } from '../lib/notify';
 import { Download, Upload, Bell, ArchiveRestore, Trash2 } from 'lucide-react';
+import { syncToken, setSyncToken, syncTasks, enableServerPush } from '../lib/tasksync';
 import HabitReorderList from '../components/HabitReorderList';
 
 export default function Settings() {
@@ -13,6 +14,19 @@ export default function Settings() {
   const [permission, setPermission] = useState<NotificationPermission>(
     'Notification' in window ? Notification.permission : 'denied'
   );
+
+  const [token, setToken] = useState(syncToken());
+  const [syncMsg, setSyncMsg] = useState('');
+
+  async function saveToken() {
+    setSyncToken(token);
+    const r = await syncTasks();
+    setSyncMsg(r.ok ? 'Synced.' : `Sync failed: ${r.error}`);
+  }
+
+  async function turnOnPush() {
+    setSyncMsg(await enableServerPush());
+  }
 
   async function toggleNotif() {
     const next = !notif;
@@ -155,6 +169,22 @@ export default function Settings() {
           </ul>
         </section>
       )}
+
+      <section className="bg-surface rounded-2xl p-4 mb-4">
+        <div className="text-xs uppercase tracking-wider text-muted mb-3">Task sync (drift)</div>
+        <input
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Sync token"
+          className="w-full bg-bg rounded-xl px-3 py-2 text-sm outline-none mb-2"
+        />
+        <div className="flex gap-2">
+          <button onClick={saveToken} className="text-xs px-3 py-2 rounded-xl bg-bg">Save and sync</button>
+          <button onClick={turnOnPush} className="text-xs px-3 py-2 rounded-xl bg-bg">Turn on server reminders</button>
+        </div>
+        {syncMsg && <p className="text-[11px] text-muted mt-2">{syncMsg}</p>}
+      </section>
 
       <section className="bg-surface rounded-2xl p-4 mb-4">
         <div className="text-xs uppercase tracking-wider text-muted mb-3">Backup</div>

@@ -36,10 +36,26 @@ export type Tap = {
   ts: string;       // ISO instant
 };
 
+export const TASK_CATEGORIES = ['school', 'emails', 'work', 'life'] as const;
+export const TASK_STATUSES = ['todo', 'pending', 'completed', 'cancelled'] as const;
+
+// Shared shape with the drift desktop app. updatedAt drives last-write-wins sync;
+// deletedAt is a tombstone so deletes sync too.
+export type Task = {
+  id: string;
+  title: string;
+  category: (typeof TASK_CATEGORIES)[number];
+  status: (typeof TASK_STATUSES)[number];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
 class TendDB extends Dexie {
   habits!: Table<Habit, number>;
   entries!: Table<Entry, number>;
   taps!: Table<Tap, number>;
+  tasks!: Table<Task, string>;
 
   constructor() {
     super('tend');
@@ -84,6 +100,13 @@ class TendDB extends Dexie {
           ts: e.updatedAt ?? e.createdAt,
         }));
       if (seeded.length) await tx.table('taps').bulkAdd(seeded);
+    });
+    // v4: tasks synced with drift.
+    this.version(4).stores({
+      habits: '++id, order, archivedAt',
+      entries: '++id, habitId, date, [habitId+date]',
+      taps: '++id, habitId, date, ts, [habitId+date]',
+      tasks: 'id, status, updatedAt',
     });
   }
 }

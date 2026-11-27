@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { Home, BarChart3, Sparkles, Layers, Settings as SettingsIcon } from 'lucide-react';
+import { Home, BarChart3, Sparkles, Layers, ListTodo, Settings as SettingsIcon } from 'lucide-react';
 import clsx from 'clsx';
 
 const items = [
   { to: '/', label: 'Today', icon: Home },
+  { to: '/tasks', label: 'Tasks', icon: ListTodo },
   { to: '/insights', label: 'Insights', icon: BarChart3 },
   { to: '/on-deck', label: 'On-deck', icon: Layers },
   { to: '/weekly', label: 'Weekly', icon: Sparkles },
@@ -13,7 +14,7 @@ const items = [
 export default function Nav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-bg/85 backdrop-blur-xl border-t border-border safe-bottom">
-      <div className="grid grid-cols-5 px-1 py-2">
+      <div className="grid grid-cols-6 px-1 py-2">
         {items.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

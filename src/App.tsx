@@ -4,10 +4,12 @@ import Today from './pages/Today';
 import Insights from './pages/Insights';
 import Weekly from './pages/Weekly';
 import Settings from './pages/Settings';
+import Tasks from './pages/Tasks';
 import OnDeck from './pages/OnDeck';
 import Nav from './components/Nav';
 import { db, seedIfEmpty } from './db';
 import { maybeFireDailyReminder } from './lib/notify';
+import { syncTasks } from './lib/tasksync';
 import { registerServiceWorker, type SwUpdate } from './lib/sw';
 import { RefreshCw } from 'lucide-react';
 
@@ -26,8 +28,12 @@ export default function App() {
     }
 
     checkReminder();
+    syncTasks();
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) checkReminder();
+      if (!document.hidden) {
+        checkReminder();
+        syncTasks();
+      }
     });
 
     if ('serviceWorker' in navigator) {
@@ -37,10 +43,14 @@ export default function App() {
     }
 
     const id = setInterval(checkReminder, 60 * 60 * 1000);
+    const syncId = setInterval(syncTasks, 60 * 1000);
 
     registerServiceWorker((u) => setUpdate(u));
 
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      clearInterval(syncId);
+    };
   }, []);
 
   return (
@@ -49,6 +59,7 @@ export default function App() {
         <main className="flex-1 pb-24">
           <Routes>
             <Route path="/" element={<Today />} />
+            <Route path="/tasks" element={<Tasks />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/weekly" element={<Weekly />} />
             <Route path="/on-deck" element={<OnDeck />} />

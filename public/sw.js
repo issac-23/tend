@@ -1,7 +1,7 @@
 // tend service worker — offline cache + notification handling.
 // Bumped to v3 to invalidate stale v2 caches.
 
-const CACHE = 'tend-v4';
+const CACHE = 'tend-v5';
 const SHELL = [
   '/',
   '/manifest.webmanifest',
@@ -66,16 +66,33 @@ self.addEventListener('message', (e) => {
   if (e.data === 'skip-waiting') self.skipWaiting();
 });
 
+// Server-sent Web Push: works while the app is closed.
+self.addEventListener('push', (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch { /* plain text */ }
+  event.waitUntil(
+    self.registration.showNotification(d.title || 'tend', {
+      body: d.body || '',
+      icon: '/icon-192.png',
+      badge: '/badge-96.png',
+      tag: d.tag || 'tend-push',
+      renotify: true,
+      data: { url: d.url || '/' },
+    })
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil((async () => {
     const clientsArr = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const target = (event.notification.data && event.notification.data.url) || '/';
     const existing = clientsArr.find((c) => c.url.includes(self.location.origin));
     if (existing) {
       await existing.focus();
-      existing.navigate('/');
+      existing.navigate(target);
     } else {
-      await self.clients.openWindow('/');
+      await self.clients.openWindow(target);
     }
   })());
 });

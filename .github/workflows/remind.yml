@@ -1,0 +1,13 @@
+name: task reminders
+# Free scheduler for push reminders. The endpoint decides whether this run should notify.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST -H "Authorization: Bearer ${{ secrets.DRIFT_SYNC_TOKEN }}" \
+            "${{ secrets.TEND_URL }}/api/push-send"
