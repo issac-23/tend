@@ -85,12 +85,14 @@ export async function handleTasks(req: ApiRequest, deps: HandlerDeps): Promise<A
       return json(400, { error: 'invalid_body', issues })
     }
 
+    // A task dated too far ahead is skipped, not the whole batch, so one bad clock
+    // can't block a device's other changes. Its id comes back in `rejected`.
     const limit = deps.now() + MAX_FUTURE_SKEW_MS
-    const future = parsed.data.tasks.find((t) => Date.parse(t.updatedAt) > limit)
-    if (future) return json(400, { error: 'updated_at_in_future', id: future.id })
+    const accepted = parsed.data.tasks.filter((t) => Date.parse(t.updatedAt) <= limit)
+    const rejected = parsed.data.tasks.filter((t) => Date.parse(t.updatedAt) > limit).map((t) => t.id)
 
-    const tasks = await store.merge(reduceBatch(parsed.data.tasks))
-    return json(200, { tasks, serverTime: new Date(deps.now()).toISOString() })
+    const tasks = await store.merge(reduceBatch(accepted))
+    return json(200, { tasks, rejected, serverTime: new Date(deps.now()).toISOString() })
   } catch {
     return json(500, { error: 'storage_error' })
   }

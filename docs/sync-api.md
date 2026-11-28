@@ -18,7 +18,7 @@ All requests need `Authorization: Bearer <key>`. Only `GET`, `POST` and `OPTIONS
 { "tasks": [ ... ] }
 ```
 
-A task is `{ id (uuid), title (1 to 500 chars), category (school|emails|work|life), status (todo|pending|completed|cancelled), createdAt, updatedAt, deletedAt (ISO or null) }`. Unknown keys are rejected. A batch holds at most 1000 tasks and the body at most 1 MB. A task whose `updatedAt` is more than 5 minutes ahead of the server clock rejects the whole batch with 400. All the limits are in `api/_lib/config.ts`.
+A task is `{ id (uuid), title (1 to 500 chars), category (school|emails|work|life), status (todo|pending|completed|cancelled), createdAt, updatedAt, deletedAt (ISO or null) }`. Unknown keys are rejected. A batch holds at most 1000 tasks and the body at most 1 MB. A task whose `updatedAt` is more than 5 minutes ahead of the server clock is skipped; its id comes back in `rejected` and the rest of the batch is merged. All the limits are in `api/_lib/config.ts`.
 
 Merge rule, per id: the incoming copy wins only if its `updatedAt` is strictly newer; on a tie the stored copy stays. Nothing is hard-deleted: `deletedAt` stays set until a strictly newer update sends `deletedAt: null`.
 

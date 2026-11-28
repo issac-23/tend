@@ -123,14 +123,14 @@ describe('validation', () => {
 })
 
 describe('future timestamp guard', () => {
-  it('rejects updatedAt beyond the skew and rejects the whole batch', async () => {
+  it('skips a task dated beyond the skew but keeps the rest of the batch', async () => {
     const deps = makeDeps()
     const ok = makeTask()
     const future = makeTask({ updatedAt: iso(MAX_FUTURE_SKEW_MS + 1000) })
     const res = await post(deps, [ok, future])
-    expect(res.status).toBe(400)
-    expect(JSON.parse(res.body).error).toBe('updated_at_in_future')
-    expect(tasksOf(await call(deps, 'GET'))).toEqual([])
+    expect(res.status).toBe(200)
+    expect(JSON.parse(res.body).rejected).toEqual([future.id])
+    expect(tasksOf(await call(deps, 'GET'))).toEqual([ok])
   })
 
   it('accepts updatedAt right at the limit', async () => {
