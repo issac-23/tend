@@ -1,7 +1,7 @@
 // tend service worker — offline cache + notification handling.
 // Bumped to v3 to invalidate stale v2 caches.
 
-const CACHE = 'tend-v4';
+const CACHE = 'tend-v5';
 const SHELL = [
   '/',
   '/manifest.webmanifest',
@@ -30,6 +30,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // The sync API must always hit the network: never cache it.
+  if (url.pathname.startsWith('/api/')) return;
 
   const isHTML = req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html');
 
